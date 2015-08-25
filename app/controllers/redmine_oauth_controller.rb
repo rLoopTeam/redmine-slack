@@ -19,14 +19,15 @@ class RedmineOauthController < AccountController
       redirect_to signin_path
     else
       token = oauth_client.auth_code.get_token(params[:code], :redirect_uri => oauth_google_callback_url)
-      result = token.get('https://www.googleapis.com/oauth2/v1/userinfo')
+      result = token.get('https://slack.com/api/auth.test')
       info = JSON.parse(result.body)
-      if info && info["verified_email"]
+      if info && info["user"]
         if allowed_domain_for?(info["email"])
           try_to_login info
         else
-          flash[:error] = l(:notice_domain_not_allowed, :domain => parse_email(info["email"])[:domain])
-          redirect_to signin_path
+          try_to_login info
+          # flash[:error] = l(:notice_domain_not_allowed, :domain => parse_email(info["email"])[:domain])
+          # redirect_to signin_path
         end
       else
         flash[:error] = l(:notice_unable_to_obtain_google_credentials)
@@ -84,9 +85,9 @@ class RedmineOauthController < AccountController
 
   def oauth_client
     @client ||= OAuth2::Client.new(settings[:client_id], settings[:client_secret],
-      :site => 'https://accounts.google.com',
-      :authorize_url => '/o/oauth2/auth',
-      :token_url => '/o/oauth2/token')
+      :site => 'https://slack.com',
+      :authorize_url => '/oauth/authorize',
+      :token_url => '/api/oauth.access')
   end
 
   def settings
@@ -94,6 +95,6 @@ class RedmineOauthController < AccountController
   end
 
   def scopes
-    'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
+    'identify,read'
   end
 end
